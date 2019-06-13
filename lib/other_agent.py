@@ -1,3 +1,12 @@
+'''
+Filename: /Users/rh01/deeprm/lib/other_agent.py
+Path: /Users/rh01/deeprm/lib
+Created Date: Thursday, June 13th 2019, 7:13:13 pm
+Author: rh01
+
+Copyright (c) 2019 Your Company
+'''
+
 import numpy as np
 
 
