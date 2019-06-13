@@ -1,5 +1,9 @@
 # DeepRM3
 
+
+Deep reinforcement learning for resource managment and job schedule.  it is inspired by deeprm model and I will implement for in practical docker environment. Implement by either pytorch or tensorflow.
+
+
 ## Deadline
 
 - deeprm
@@ -15,9 +19,6 @@ This project will use deep-reinforcement-learning as agent algorithm, and use sy
 [1] HotNets'16 http://people.csail.mit.edu/hongzi/content/publications/DeepRM-HotNets16.pdf
 
 
-## Project Introduction
-
-Deep reinforcement learning for resource managment and job schedule.  it is inspired by deeprm model and I will implement for in practical docker environment.
 
 
 ## Credit
