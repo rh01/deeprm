@@ -10,6 +10,10 @@ Deep reinforcement learning for resource managment and job schedule.  it is insp
 - deeprm2
 - deeprm3 with cnn,rnn,and rnn-q-network
 
+# Changelog
+
+- 2019/06/13: create repo and update base lib
+
 ## Project Schedule
 
 This project will use deep-reinforcement-learning as agent algorithm, and use syn dataset and pratical dataset as training data, and state-of-art model is concered.
