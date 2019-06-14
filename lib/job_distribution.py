@@ -11,11 +11,10 @@ import numpy as np
 
 
 class Dist:
-
     def __init__(self, num_res, max_nw_size, job_len):
-        self.num_res = num_res
-        self.max_nw_size = max_nw_size
-        self.job_len = job_len
+        self.num_res = num_res  # number of resource type
+        self.max_nw_size = max_nw_size  # max number of new work size
+        self.job_len = job_len  # length of job set
 
         self.job_small_chance = 0.8
 
@@ -69,7 +68,15 @@ class Dist:
 
 
 def generate_sequence_work(pa, seed=42):
+    """
+    generate seqence work set
 
+    Parameters
+    --------------
+    :param pa:
+    :param seed:
+    :return:
+    """
     np.random.seed(seed)
 
     simu_len = pa.simu_len * pa.num_ex
