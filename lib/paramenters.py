@@ -1,3 +1,4 @@
+# -*- coding:utf8 -*-
 '''
 Filename: /Users/rh01/deeprm/lib/paramenters.py
 Path: /Users/rh01/deeprm/lib
@@ -11,7 +12,8 @@ Copyright (c) 2019 rh01
 import numpy as np
 import math
 
-from . import job_distribution
+from .job_distribution import Dist
+from .log import Logger
 
 
 
@@ -20,14 +22,14 @@ class Parameters:
 
         self.output_filename = 'data/tmp'
 
-        self.num_epochs = 10000         # number of training epochs
+        self.num_epochs = 10000        # number of training epochs
         self.simu_len = 50             # length of the busy cycle that repeats itself
-        self.num_ex = 10                # number of sequences
+        self.num_ex = 10               # number of sequences
 
         self.output_freq = 10          # interval for output and store parameters
 
         self.num_seq_per_batch = 10    # number of sequences to compute baseline
-        self.episode_max_length = 1000  # enforcing an artificial terminal
+        self.episode_max_length = 1000 # enforcing an artificial terminal
 
         self.num_res = 2               # number of resources in the system
         self.num_nw = 5                # maximum allowed number of work in the queue
@@ -45,10 +47,12 @@ class Parameters:
 
         self.new_job_rate = 0.7        # lambda in new job arrival Poisson Process
 
-        self.discount = 1           # discount factor
+        self.discount = 1              # discount factor
+
+        self.logger = Logger()
 
         # distribution for new job arrival
-        self.dist = job_distribution.Dist(self.num_res, self.max_job_size, self.max_job_len)
+        self.dist = Dist(self.num_res, self.max_job_size, self.max_job_len, self.logger)
 
         # graphical representation
         assert self.backlog_size % self.time_horizon == 0  # such that it can be converted into an image

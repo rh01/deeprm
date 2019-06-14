@@ -1,3 +1,4 @@
+# coding: utf-8
 '''
 Filename: /Users/rh01/deeprm/lib/env.py
 Path: /Users/rh01/deeprm/lib
@@ -11,21 +12,33 @@ import numpy as np
 import math
 import matplotlib
 import matplotlib.pyplot as plt
+import sys
 
-matplotlib.use("TkAgg")
-
+## use macos
+if sys.platform == "darwin":
+    matplotlib.use("TkAgg")
 
 
 class Env:
     def __init__(self, pa, nw_len_seqs=None, nw_size_seqs=None,
                  seed=42, render=False, repre='image', end='no_new_job'):
+        """
+        initialize environment for agent.
 
+        :param pa: class object of Parameters class
+        :param nw_len_seqs: ndarray
+        :param nw_size_seqs: ndarray
+        :param seed:   int, random seed
+        :param render: bool, if True, render env, else not.
+        :param repre: string, "image" or "compact representation"
+        :param end:   string, termination type
+        """
         self.pa = pa
         self.render = render
         self.repre = repre  # image or compact representation
         self.end = end  # termination type, 'no_new_job' or 'all_done'
 
-        self.nw_dist = pa.dist.bi_model_dist
+        self.nw_dist = pa.dist.bi_model_dist  # new work sample from specific distribution
 
         self.curr_time = 0
 
@@ -37,10 +50,11 @@ class Env:
 
         if nw_len_seqs is None or nw_size_seqs is None:
             # generate new work
+            # self.pa.num_ex -> number of sequences
             self.nw_len_seqs, self.nw_size_seqs = \
                 self.generate_sequence_work(self.pa.simu_len * self.pa.num_ex)
 
-            self.workload = np.zeros(pa.num_res)
+            self.workload = np.zeros(pa.num_res)   # workload, all resource type
             for i in range(pa.num_res):
                 self.workload[i] = \
                     np.sum(self.nw_size_seqs[:, i] * self.nw_len_seqs) / \
@@ -48,7 +62,7 @@ class Env:
                     float(len(self.nw_len_seqs))
                 print("Load on # " + str(i) + " resource dimension is " + str(self.workload[i]))
             self.nw_len_seqs = np.reshape(self.nw_len_seqs,
-                                           [self.pa.num_ex, self.pa.simu_len])
+                                          [self.pa.num_ex, self.pa.simu_len])
             self.nw_size_seqs = np.reshape(self.nw_size_seqs,
                                            [self.pa.num_ex, self.pa.simu_len, self.pa.num_res])
         else:
@@ -66,19 +80,42 @@ class Env:
         self.extra_info = ExtraInfo(pa)
 
     def generate_sequence_work(self, simu_len):
+        """
+        Generate sequence of new works.
 
+        Parameters
+        ---------------
+        :param simu_len: Integer, simulation steps
+        :return: Tuple(ndarray of int, ndarray of int), i.e. (nw_len_seq, nw_size_seq)
+
+        Example
+        -----------
+        >>> env = Env()
+        >>> nw_len_seq, nw_size_seq = env.generate_sequence_work(10)
+        """
         nw_len_seq = np.zeros(simu_len, dtype=int)
         nw_size_seq = np.zeros((simu_len, self.pa.num_res), dtype=int)
 
         for i in range(simu_len):
-
             if np.random.rand() < self.pa.new_job_rate:  # a new job comes
-
                 nw_len_seq[i], nw_size_seq[i, :] = self.nw_dist()
-
         return nw_len_seq, nw_size_seq
 
     def get_new_job_from_seq(self, seq_no, seq_idx):
+        """
+        Get new job from sample sequence
+
+        Parameters
+        ---------------
+        :param seq_no:
+        :param seq_idx:
+        :return: new Job class object
+
+        Example
+        --------------
+        >>> env=Env()
+        >>> job = env.get_new_job_from_seq(2,1)
+        """
         new_job = Job(res_vec=self.nw_size_seqs[seq_no, seq_idx, :],
                       job_len=self.nw_len_seqs[seq_no, seq_idx],
                       job_id=len(self.job_record.record),
@@ -86,67 +123,55 @@ class Env:
         return new_job
 
     def observe(self):
+        """
+        Training data, and as repre object.
+
+        :return:
+        """
         if self.repre == 'image':
-
             backlog_width = int(math.ceil(self.pa.backlog_size / float(self.pa.time_horizon)))
-
             image_repr = np.zeros((self.pa.network_input_height, self.pa.network_input_width))
-
             ir_pt = 0
-
             for i in range(self.pa.num_res):
-
                 image_repr[:, ir_pt: ir_pt + self.pa.res_slot] = self.machine.canvas[i, :, :]
                 ir_pt += self.pa.res_slot
-
                 for j in range(self.pa.num_nw):
-
                     if self.job_slot.slot[j] is not None:  # fill in a block of work
                         image_repr[: self.job_slot.slot[j].len, ir_pt: ir_pt + self.job_slot.slot[j].res_vec[i]] = 1
-
                     ir_pt += self.pa.max_job_size
 
             image_repr[: int(self.job_backlog.curr_size / backlog_width),
-                       ir_pt: ir_pt + backlog_width] = 1
+            ir_pt: ir_pt + backlog_width] = 1
             if self.job_backlog.curr_size % backlog_width > 0:
                 image_repr[int(self.job_backlog.curr_size / backlog_width),
-                           ir_pt: ir_pt + self.job_backlog.curr_size % backlog_width] = 1
+                ir_pt: ir_pt + self.job_backlog.curr_size % backlog_width] = 1
             ir_pt += backlog_width
 
             image_repr[:, ir_pt: ir_pt + 1] = self.extra_info.time_since_last_new_job / \
                                               float(self.extra_info.max_tracking_time_since_last_job)
             ir_pt += 1
-
             assert ir_pt == image_repr.shape[1]
-
             return image_repr.ravel()[np.newaxis, :]
-            #return image_repr
+            # return image_repr
 
+    # if render, excute plot_state automatically
     def plot_state(self):
         plt.figure("screen", figsize=(20, 5))
-
         skip_row = 0
-
         for i in range(self.pa.num_res):
-
             plt.subplot(self.pa.num_res,
                         1 + self.pa.num_nw + 1,  # first +1 for current work, last +1 for backlog queue
                         i * (self.pa.num_nw + 1) + skip_row + 1)  # plot the backlog at the end, +1 to avoid 0
-
             plt.imshow(self.machine.canvas[i, :, :], interpolation='nearest', vmax=1)
-
             for j in range(self.pa.num_nw):
-
                 job_slot = np.zeros((self.pa.time_horizon, self.pa.max_job_size))
                 if self.job_slot.slot[j] is not None:  # fill in a block of work
                     job_slot[: self.job_slot.slot[j].len, :self.job_slot.slot[j].res_vec[i]] = 1
-
                 plt.subplot(self.pa.num_res,
                             1 + self.pa.num_nw + 1,  # first +1 for current work, last +1 for backlog queue
-                            1 + i * (self.pa.num_nw + 1) + j + skip_row + 1)  # plot the backlog at the end, +1 to avoid 0
-
+                            1 + i * (
+                                    self.pa.num_nw + 1) + j + skip_row + 1)  # plot the backlog at the end, +1 to avoid 0
                 plt.imshow(job_slot, interpolation='nearest', vmax=1)
-
                 if j == self.pa.num_nw - 1:
                     skip_row += 1
 
@@ -173,11 +198,18 @@ class Env:
 
         plt.imshow(extra_info, interpolation='nearest', vmax=1)
 
-        plt.show()     # manual
-        # plt.pause(0.01)  # automatic
+        plt.show()  # manual
+        plt.pause(0.01)  # automatic
 
     def get_reward(self):
+        """
+        Note
+        ------------
+        Reward formula:
+        .. math::  \sum_{j \in \mathcal{J}} \gamma \frac{-1}{T_j}
 
+        :return:
+        """
         reward = 0
         for j in self.machine.running_job:
             reward += self.pa.delay_penalty / float(j.len)
@@ -203,12 +235,12 @@ class Env:
         if a == self.pa.num_nw:  # explicit void action
             status = 'MoveOn'
         elif self.job_slot.slot[a] is None:  # implicit void action
-            #if self.seq_idx >= self.pa.simu_len and \
-                    #len(self.machine.running_job) > 0 and \
-                    #all(s is None for s in self.job_backlog.backlog):
-                #ob, reward, done, info = self.step(a + 1, repeat=True)
-                #return ob, reward, done, info
-            #else:
+            # if self.seq_idx >= self.pa.simu_len and \
+            # len(self.machine.running_job) > 0 and \
+            # all(s is None for s in self.job_backlog.backlog):
+            # ob, reward, done, info = self.step(a + 1, repeat=True)
+            # return ob, reward, done, info
+            # else:
             status = 'MoveOn'
         else:
             allocated = self.machine.allocate_job(self.job_slot.slot[a], self.curr_time)
@@ -227,9 +259,9 @@ class Env:
                     done = True
             elif self.end == "all_done":  # everything has to be finished
                 if self.seq_idx >= self.pa.simu_len and \
-                   len(self.machine.running_job) == 0 and \
-                   all(s is None for s in self.job_slot.slot) and \
-                   all(s is None for s in self.job_backlog.backlog):
+                        len(self.machine.running_job) == 0 and \
+                        all(s is None for s in self.job_slot.slot) and \
+                        all(s is None for s in self.job_backlog.backlog):
                     done = True
                 elif self.curr_time > self.pa.episode_max_length:  # run too long, force termination
                     done = True
@@ -287,7 +319,7 @@ class Env:
                 self.seq_no = (self.seq_no + 1) % self.pa.num_ex
 
             self.reset()
-        
+
         if self.render:
             self.plot_state()
 
@@ -349,17 +381,11 @@ class Machine:
         self.canvas = np.zeros((pa.num_res, pa.time_horizon, pa.res_slot))
 
     def allocate_job(self, job, curr_time):
-
         allocated = False
-
         for t in range(0, self.time_horizon - job.len):
-
             new_avbl_res = self.avbl_slot[t: t + job.len, :] - job.res_vec
-
             if np.all(new_avbl_res[:] >= 0):
-
                 allocated = True
-
                 self.avbl_slot[t: t + job.len, :] = new_avbl_res
                 job.start_time = curr_time + t
                 job.finish_time = job.start_time + job.len
@@ -391,17 +417,13 @@ class Machine:
         return allocated
 
     def time_proceed(self, curr_time):
-
         self.avbl_slot[:-1, :] = self.avbl_slot[1:, :]
         self.avbl_slot[-1, :] = self.res_slot
-
         for job in self.running_job:
-
             if job.finish_time <= curr_time:
                 self.running_job.remove(job)
 
         # update graphical representation
-
         self.canvas[:, :-1, :] = self.canvas[:, 1:, :]
         self.canvas[:, -1, :] = 0
 
@@ -417,4 +439,3 @@ class ExtraInfo:
     def time_proceed(self):
         if self.time_since_last_new_job < self.max_tracking_time_since_last_job:
             self.time_since_last_new_job += 1
-

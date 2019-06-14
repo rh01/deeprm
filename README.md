@@ -10,7 +10,7 @@ Deep reinforcement learning for resource managment and job schedule.  it is insp
 - deeprm2
 - deeprm3 with cnn,rnn,and rnn-q-network
 
-## Changelog
+# Changelog
 
 - 2019/06/13: create repo and update base lib
 
