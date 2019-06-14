@@ -31,7 +31,7 @@ class Parameters:
         self.num_seq_per_batch = 10    # number of sequences to compute baseline
         self.episode_max_length = 1000 # enforcing an artificial terminal
 
-        self.num_res = 2               # number of resources in the system
+        self.num_res = 2               # number of available resources in the system
         self.num_nw = 5                # maximum allowed number of work in the queue
 
         self.time_horizon = 20         # number of time steps in the graph
@@ -65,7 +65,6 @@ class Parameters:
         # compact representation
         self.network_compact_dim = (self.num_res + 1) * \
             (self.time_horizon + self.num_nw) + 1  # + 1 for backlog indicator
-
         self.network_output_dim = self.num_nw + 1  # + 1 for void action
 
         self.delay_penalty = -1       # penalty for delaying things in the current work screen
